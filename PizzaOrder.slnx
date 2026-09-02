@@ -1,0 +1,4 @@
+<Solution>
+    <Project Path="PizzaOrder.Console/PizzaOrder.Console.csproj"/>
+    <Project Path="PizzaOrder.Api/PizzaOrder.Api.csproj"/>
+</Solution>
