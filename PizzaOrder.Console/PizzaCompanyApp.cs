@@ -186,9 +186,9 @@ internal sealed class PizzaCompanyApp
         AnsiConsole.Write(new Rule("[bold yellow]2 · PREPARE & COOK[/]").RuleStyle("grey").LeftJustified());
         var steps = new (string Icon, string Text, int Delay)[]
         {
-            ("🧾", "Order sent to the kitchen", 400), ("🥣", "Hand-stretching the dough", 500),
-            ("🍅", "Adding sauce and fresh toppings", 550), ("🔥", "Baking at 750°F", 700),
-            ("🔪", "Slicing and boxing", 450), ("✅", "Quality check complete", 350)
+            ("🧾", "Order sent to the kitchen", 1200), ("🥣", "Hand-stretching the dough", 1500),
+            ("🍅", "Adding sauce and fresh toppings", 1600), ("🔥", "Baking at 750°F", 2000),
+            ("🔪", "Slicing and boxing", 1300), ("✅", "Quality check complete", 1000)
         };
         await AnsiConsole.Progress().AutoClear(false).HideCompleted(false)
             .Columns(new SpinnerColumn(), new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
@@ -219,11 +219,11 @@ internal sealed class PizzaCompanyApp
         await AnsiConsole.Status().Spinner(Spinner.Known.BouncingBar).SpinnerStyle(Style.Parse("yellow"))
             .StartAsync("[yellow]Finding your driver…[/]", async ctx =>
             {
-                await Task.Delay(400);
+                await Task.Delay(1000);
                 foreach (var status in statuses)
                 {
                     ctx.Status($"[yellow]🛵 {status}[/]");
-                    await Task.Delay(400);
+                    await Task.Delay(1100);
                 }
             });
         AnsiConsole.Write(
