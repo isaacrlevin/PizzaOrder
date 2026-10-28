@@ -9,6 +9,7 @@
     <ItemGroup>
         <Compile Include="..\PizzaOrder.Api\Models.cs" Link="Models.cs"/>
         <Compile Include="..\PizzaOrder.Api\OrderApiClient.cs" Link="OrderApiClient.cs"/>
+        <Compile Include="..\PizzaOrder.Api\OrderStatusDisplay.cs" Link="OrderStatusDisplay.cs"/>
         <PackageReference Include="Spectre.Console" Version="0.57.2"/>
     </ItemGroup>
 </Project>

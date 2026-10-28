@@ -8,15 +8,6 @@ internal sealed class PizzaCompanyApp
 
     public PizzaCompanyApp(OrderApiClient api) => _api = api;
 
-    private static readonly MenuPizza[] Menu =
-    [
-        new("Margherita", "San Marzano tomato, fresh mozzarella, basil", 11.99m),
-        new("Pepperoni", "Cup-and-char pepperoni, mozzarella, tomato", 13.49m),
-        new("Garden Verde", "Peppers, mushrooms, olives, red onion", 13.99m),
-        new("Firehouse", "Spicy sausage, jalapeño, hot honey", 15.49m),
-        new("Truffle Shroom", "Roasted mushrooms, fontina, truffle cream", 16.49m)
-    ];
-
     public async Task RunAsync()
     {
         while (true)
@@ -71,8 +62,7 @@ internal sealed class PizzaCompanyApp
 
         await _api.SaveAsync(order);
         AnsiConsole.MarkupLine("[green]✓ Order saved.[/]");
-        await RunKitchenAsync(order);
-        await RunDeliveryAsync(order);
+        await TrackOrderAsync(order);
         ShowReceipt(order);
         Pause();
     }
@@ -98,7 +88,7 @@ internal sealed class PizzaCompanyApp
             ShowMenu();
             var pizza = AnsiConsole.Prompt(new SelectionPrompt<MenuPizza>()
                 .Title("Choose your [yellow]pizza[/]").PageSize(5)
-                .UseConverter(item => $"{item.Name,-16} [grey]from ${item.BasePrice:F2}[/]").AddChoices(Menu));
+                .UseConverter(item => $"{item.Name,-16} [grey]from ${item.BasePrice:F2}[/]").AddChoices(PizzaMenu.Items));
             var size = AnsiConsole.Prompt(new SelectionPrompt<PizzaSize>()
                 .Title("Choose a [yellow]size[/]")
                 .UseConverter(s => s switch
@@ -159,7 +149,7 @@ internal sealed class PizzaCompanyApp
         var table = new Table().Border(TableBorder.Rounded).BorderColor(Color.Grey)
             .AddColumn("[bold]Pizza[/]").AddColumn("[bold]Fresh toppings[/]")
             .AddColumn(new TableColumn("[bold]Small[/]").RightAligned());
-        foreach (var item in Menu)
+        foreach (var item in PizzaMenu.Items)
             table.AddRow($"[yellow]{Markup.Escape(item.Name)}[/]", $"[grey]{Markup.Escape(item.Description)}[/]",
                 $"${item.BasePrice:F2}");
         AnsiConsole.Write(table);
@@ -181,49 +171,25 @@ internal sealed class PizzaCompanyApp
             .BorderColor(Color.Yellow));
     }
 
-    private static async Task RunKitchenAsync(Order order)
+    private async Task TrackOrderAsync(Order order)
     {
-        AnsiConsole.Write(new Rule("[bold yellow]2 · PREPARE & COOK[/]").RuleStyle("grey").LeftJustified());
-        var steps = new (string Icon, string Text, int Delay)[]
-        {
-            ("🧾", "Order sent to the kitchen", 1200), ("🥣", "Hand-stretching the dough", 1500),
-            ("🍅", "Adding sauce and fresh toppings", 1600), ("🔥", "Baking at 750°F", 2000),
-            ("🔪", "Slicing and boxing", 1300), ("✅", "Quality check complete", 1000)
-        };
-        await AnsiConsole.Progress().AutoClear(false).HideCompleted(false)
-            .Columns(new SpinnerColumn(), new TaskDescriptionColumn(), new ProgressBarColumn(), new PercentageColumn())
-            .StartAsync(async context =>
-            {
-                foreach (var (icon, text, delay) in steps)
-                {
-                    var task = context.AddTask($"{icon} [white]{text}[/]");
-                    for (var i = 0; i < 10; i++)
-                    {
-                        await Task.Delay(delay / 10);
-                        task.Increment(10);
-                    }
-                }
-            });
-        AnsiConsole.MarkupLine(
-            $"\n[bold green]Fresh from the oven![/] Order [yellow]{order.Number}[/] is ready for pickup.");
-    }
-
-    private static async Task RunDeliveryAsync(Order order)
-    {
-        AnsiConsole.Write(new Rule("[bold yellow]3 · DELIVERY[/]").RuleStyle("grey").LeftJustified());
-        string[] statuses =
-        [
-            "Driver Maya collected your order", "Leaving the restaurant", "Halfway there", "Turning onto your street",
-            "Arrived at your door"
-        ];
+        AnsiConsole.Write(new Rule("[bold yellow]2 · TRACK YOUR ORDER[/]").RuleStyle("grey").LeftJustified());
+        var status = OrderStatus.Received;
         await AnsiConsole.Status().Spinner(Spinner.Known.BouncingBar).SpinnerStyle(Style.Parse("yellow"))
-            .StartAsync("[yellow]Finding your driver…[/]", async ctx =>
+            .StartAsync("[yellow]Sending your order to the kitchen…[/]", async ctx =>
             {
-                await Task.Delay(1000);
-                foreach (var status in statuses)
+                while (status != OrderStatus.Delivered)
                 {
-                    ctx.Status($"[yellow]🛵 {status}[/]");
-                    await Task.Delay(1100);
+                    var current = await _api.GetOrderAsync(order.Number);
+                    if (current is not null && current.Status != status)
+                    {
+                        status = current.Status;
+                        AnsiConsole.MarkupLine($"[green]✓[/] {OrderStatusDisplay.Describe(status)}");
+                    }
+
+                    ctx.Status($"[yellow]{OrderStatusDisplay.Describe(status)}…[/]");
+                    if (status != OrderStatus.Delivered)
+                        await Task.Delay(1000);
                 }
             });
         AnsiConsole.Write(

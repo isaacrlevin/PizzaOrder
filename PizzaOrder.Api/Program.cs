@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("PizzaOrders")
                        ?? "Host=localhost;Port=55432;Database=pizza_orders;Username=postgres;Password=postgres";
 builder.Services.AddSingleton(new OrderDatabase(connectionString));
+builder.Services.AddHostedService<OrderProgressionService>();
 
 var app = builder.Build();
 var database = app.Services.GetRequiredService<OrderDatabase>();
@@ -16,6 +17,14 @@ app.MapGet("/orders", async (string customerName) =>
 
     return Results.Ok(await database.GetOrdersAsync(customerName));
 });
+
+app.MapGet("/orders/active", async () => Results.Ok(await database.GetActiveOrdersAsync()));
+
+app.MapGet("/orders/completed", async (int? limit) =>
+    Results.Ok(await database.GetCompletedOrdersAsync(Math.Clamp(limit ?? 10, 1, 100))));
+
+app.MapGet("/orders/{number}", async (string number) =>
+    await database.GetOrderAsync(number) is { } order ? Results.Ok(order) : Results.NotFound());
 
 app.MapPost("/orders", async (Order order) =>
 {

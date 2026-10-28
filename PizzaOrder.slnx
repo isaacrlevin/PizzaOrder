@@ -1,5 +1,7 @@
 <Solution>
     <Project Path="PizzaOrder.Console/PizzaOrder.Console.csproj"/>
+    <Project Path="PizzaOrder.Dashboard/PizzaOrder.Dashboard.csproj"/>
+    <Project Path="PizzaOrder.Client/PizzaOrder.Client.csproj"/>
     <Project Path="PizzaOrder.Api/PizzaOrder.Api.csproj"/>
     <Project Path="PizzaOrder.AppHost/PizzaOrder.AppHost.csproj"/>
 </Solution>
